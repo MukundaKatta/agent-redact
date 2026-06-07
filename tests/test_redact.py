@@ -56,6 +56,13 @@ def test_credit_card_redacted_without_luhn():
     assert "<credit-card>" in out
 
 
+def test_credit_card_does_not_swallow_trailing_separator():
+    # The redaction must end on the final digit, not consume a trailing space
+    # or hyphen that belongs to the surrounding text.
+    assert redact("num 1234 5678 9012 3456 ok") == "num <credit-card> ok"
+    assert redact("card 4111-1111-1111-1111 done") == "card <credit-card> done"
+
+
 def test_credit_card_luhn_filters_random_digits():
     text = "id 1234567890123456 here"
     # Default off: this looks like a card and gets redacted.

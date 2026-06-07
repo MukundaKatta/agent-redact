@@ -32,7 +32,7 @@ _BUILTINS: list[tuple[str, str]] = [
     (r"eyJ[A-Za-z0-9_\-]+\.[A-Za-z0-9_\-]+\.[A-Za-z0-9_\-]+", "jwt"),
     # Personal info
     (r"[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}", "email"),
-    (r"\b(?:\d[ \-]?){13,19}\b", "credit-card"),  # 13-19 digit runs; Luhn optional
+    (r"\b\d(?:[ \-]?\d){12,18}\b", "credit-card"),  # 13-19 digit runs; Luhn optional
     (r"\b\d{3}-\d{2}-\d{4}\b", "ssn"),
     # Phone (US-friendly + simple international). Requires at least one
     # separator or a leading "+" so a bare 16-digit run does not get caught here.
@@ -115,4 +115,4 @@ class Patterns:
         return self.add(r"[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}", "email")
 
     def credit_card(self) -> "Patterns":
-        return self.add(r"\b(?:\d[ \-]?){13,19}\b", "credit-card")
+        return self.add(r"\b\d(?:[ \-]?\d){12,18}\b", "credit-card")
