@@ -113,6 +113,61 @@ def test_optional_ipv4_pattern():
     assert "<ipv4>" in out
 
 
+def test_optional_ipv6_pattern():
+    patterns = Patterns().enable("ipv6")
+    out = redact("addr 2001:0db8:85a3:0000:0000:8a2e:0370:7334 end", patterns=patterns)
+    assert "<ipv6>" in out
+
+
+def test_optional_aws_secret_pattern():
+    secret = "abcd1234abcd1234abcd1234abcd1234abcd1234"  # 40 base64-ish chars
+    patterns = Patterns().enable("aws_secret")
+    out = redact(f"secret {secret} end", patterns=patterns)
+    assert "<aws-secret>" in out
+    assert secret not in out
+
+
+def test_enable_unknown_pattern_raises():
+    with pytest.raises(ValueError):
+        Patterns().enable("not-a-real-pattern")
+
+
+def test_google_key_redacted():
+    out = redact("key AIza" + ("B" * 35) + " ok")
+    assert "<google-key>" in out
+
+
+def test_slack_token_redacted():
+    out = redact("hook xoxb-" + ("1" * 15) + " ok")
+    assert "<slack-token>" in out
+
+
+def test_credit_card_builder_starts_from_empty():
+    patterns = Patterns.empty().credit_card()
+    out = redact("card 4111 1111 1111 1111 and a@b.com", patterns=patterns)
+    assert "<credit-card>" in out
+    # Email pattern was not enabled on the empty builder, so it survives.
+    assert "a@b.com" in out
+
+
+def test_with_luhn_keeps_valid_card():
+    # A genuine Luhn-valid card must still be redacted when Luhn filtering is on.
+    patterns = Patterns().with_luhn(True)
+    out = redact("card 4111111111111111 here", patterns=patterns)
+    assert "<credit-card>" in out
+
+
+def test_hash_mode_tags_non_email_labels():
+    out = redact("ssn 123-45-6789 on file", mode="hash", salt="s")
+    assert out.startswith("ssn <ssn:")
+    assert "123-45-6789" not in out
+
+
+def test_multiple_matches_redacted_in_order():
+    text = "a@b.com then ghp_" + ("Z" * 36) + " and 123-45-6789"
+    assert redact(text) == "<email> then <github-token> and <ssn>"
+
+
 def test_no_match_returns_input_unchanged():
     text = "nothing sensitive here, just words"
     assert redact(text) == text
